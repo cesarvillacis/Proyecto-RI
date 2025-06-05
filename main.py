@@ -1,5 +1,5 @@
 from sklearn.datasets import fetch_20newsgroups
-from preprocesamiento import preprocesamiento
+from src.preprocessing import preprocesamiento
 
 # Carga los datos completos, pero solo selecciona uno para probar
 newsgroups = fetch_20newsgroups(subset='all', remove=('headers', 'footers', 'quotes'))
