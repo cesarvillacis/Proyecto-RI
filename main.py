@@ -1,12 +1,11 @@
-from sklearn.datasets import fetch_20newsgroups
-from src.preprocessing import preprocesamiento
+from src.dataset_loader import load_beir_documents
+from src.preprocessing import preprocess_documents
 
-# Carga los datos completos, pero solo selecciona uno para probar
-newsgroups = fetch_20newsgroups(subset='all', remove=('headers', 'footers', 'quotes'))
+# Load documents from the BEIR dataset
+documents = load_beir_documents(limit=1)  # Change limit as needed
 
-# Solo tomar el primer documento para prueba rápida
-docs_prueba = [newsgroups.data[0]]
+# Preprocess the documents
+result_df = preprocess_documents(documents)
 
-resultado = preprocesamiento(docs_prueba)
-
-print(resultado)
+# Display result
+print(result_df)

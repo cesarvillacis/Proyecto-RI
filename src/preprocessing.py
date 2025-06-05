@@ -1,65 +1,46 @@
-# archivo: preprocesamiento.py
-
-import re
 import nltk
-from nltk.tokenize import word_tokenize
+import pandas as pd
+from nltk.tokenize import regexp_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer
 
-print("Cargando recursos de NLTK...")
+# Download required NLTK resources
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
+nltk.download('wordnet', quiet=True)
 
-nltk.download('punkt')
-nltk.download('punkt_tab')
-
-# Descargar recursos necesarios (solo la primera vez)
-# nltk.download('punkt', quiet=True)
-# nltk.download('stopwords', quiet=True)
-# nltk.download('wordnet', quiet=True)
-# nltk.download('omw-1.4', quiet=True)
-
-def preprocesamiento(docs):
-    # ── Tokenización ──
-    tokenized_docs = [word_tokenize(doc) for doc in docs]
-
-    # ── Normalización ──
-    normalized_docs = [
-        [token.lower() for token in doc if re.fullmatch(r'[a-zA-Z]+', token)]
-        for doc in tokenized_docs
-    ]
-
-    # ── Stopwords ──
+def remove_stopwords(tokens):
     stop_words = set(stopwords.words('english'))
-    filtered_docs = [
-        [token for token in doc if token not in stop_words]
-        for doc in normalized_docs
-    ]
+    return [token for token in tokens if token not in stop_words]
 
-    # ── Stemming ──
-    stemmer = PorterStemmer()
-    stemmed_docs = [
-        [stemmer.stem(token) for token in doc]
-        for doc in filtered_docs
-    ]
-
-    # ── Lematización ──
+def lemmatize_tokens(tokens):
     lemmatizer = WordNetLemmatizer()
-    lemmatized_docs = [
-        [lemmatizer.lemmatize(token) for token in doc]
-        for doc in filtered_docs
-    ]
+    return [lemmatizer.lemmatize(token) for token in tokens]
 
-    # ── Vocabularios ──
-    all_stems = [token for doc in stemmed_docs for token in doc]
-    all_lemmas = [token for doc in lemmatized_docs for token in doc]
-    vocab_stems = set(all_stems)
-    vocab_lemmas = set(all_lemmas)
+def preprocess_documents(documents):
+    """
+    Preprocess a list of documents: lowercase, tokenize, remove stopwords, lemmatize.
 
-    return {
-        "tokenized": tokenized_docs,
-        "normalized": normalized_docs,
-        "filtered": filtered_docs,
-        "stemmed": stemmed_docs,
-        "lemmatized": lemmatized_docs,
-        "vocab_stems": vocab_stems,
-        "vocab_lemmas": vocab_lemmas
-    }
+    Args:
+        documents (List[str]): List of raw document texts.
+
+    Returns:
+        pd.DataFrame: DataFrame with original and preprocessed documents.
+    """
+    df = pd.DataFrame(documents, columns=['document'])
+    
+    # Lowercase and tokenize with regex
+    df['regex_tokens'] = df['document'].str.lower().apply(
+        lambda text: regexp_tokenize(text, pattern=r'\w[a-z]+')
+    )
+
+    # Remove stopwords
+    df['no_stopwords'] = df['regex_tokens'].apply(remove_stopwords)
+
+    # Lemmatize
+    df['lemmas'] = df['no_stopwords'].apply(lemmatize_tokens)
+
+    # Join tokens into a single string
+    df['prep_doc'] = df['lemmas'].str.join(' ')
+
+    return df[['document', 'prep_doc']]
