@@ -8,8 +8,8 @@ from nltk.stem import PorterStemmer, WordNetLemmatizer
 
 print("Cargando recursos de NLTK...")
 
-# nltk.download('punkt')
-# nltk.download('punkt_tab') 
+nltk.download('punkt')
+nltk.download('punkt_tab')
 
 # Descargar recursos necesarios (solo la primera vez)
 # nltk.download('punkt', quiet=True)
