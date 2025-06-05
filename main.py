@@ -1,12 +1,12 @@
-from sklearn.datasets import fetch_20newsgroups
+import ir_datasets
 from preprocesamiento import preprocesamiento
 
-# Carga los datos completos, pero solo selecciona uno para probar
-newsgroups = fetch_20newsgroups(subset='all', remove=('headers', 'footers', 'quotes'))
+# Cargar documentos del dataset BEIR
+dataset = ir_datasets.load("beir/cqadupstack/gaming")
+docs_prueba = [doc.text for doc in dataset.docs_iter()]
 
-# Solo tomar el primer documento para prueba rápida
-docs_prueba = [newsgroups.data[0]]
+# Ejecutar preprocesamiento sobre los documentos
+resultado = preprocesamiento(docs_prueba[:1])  # solo uno para prueba rápida
 
-resultado = preprocesamiento(docs_prueba)
-
+# Mostrar resultado
 print(resultado)

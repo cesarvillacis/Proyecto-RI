@@ -1,65 +1,38 @@
-# archivo: preprocesamiento.py
-
-import re
 import nltk
-from nltk.tokenize import word_tokenize
+import pandas as pd
+from nltk.tokenize import word_tokenize, regexp_tokenize
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer, WordNetLemmatizer
+from nltk.stem import WordNetLemmatizer
 
-print("Cargando recursos de NLTK...")
+nltk.download('punkt', quiet=True)
+nltk.download('stopwords', quiet=True)
+nltk.download('wordnet', quiet=True)
 
-nltk.download('punkt')
-nltk.download('punkt_tab')
+def remove_stopwords(tokens):
+    sw = set(stopwords.words('english'))
+    return [t for t in tokens if t not in sw]
 
-# Descargar recursos necesarios (solo la primera vez)
-# nltk.download('punkt', quiet=True)
-# nltk.download('stopwords', quiet=True)
-# nltk.download('wordnet', quiet=True)
-# nltk.download('omw-1.4', quiet=True)
+def lemmatize(tokens):
+    lemmatizer = WordNetLemmatizer()
+    return [lemmatizer.lemmatize(t) for t in tokens]
 
 def preprocesamiento(docs):
-    # ── Tokenización ──
-    tokenized_docs = [word_tokenize(doc) for doc in docs]
+    # Crear DataFrame
+    df = pd.DataFrame(docs, columns=['document'])
 
-    # ── Normalización ──
-    normalized_docs = [
-        [token.lower() for token in doc if re.fullmatch(r'[a-zA-Z]+', token)]
-        for doc in tokenized_docs
-    ]
+    # Tokenización usando expresión regular
+    df['regex_tokens'] = df['document'].str.lower().apply(
+        lambda x: regexp_tokenize(x, pattern=r'\w[a-z]+')
+    )
 
-    # ── Stopwords ──
-    stop_words = set(stopwords.words('english'))
-    filtered_docs = [
-        [token for token in doc if token not in stop_words]
-        for doc in normalized_docs
-    ]
+    # Eliminar stopwords
+    df['sw_tokens'] = df['regex_tokens'].apply(remove_stopwords)
 
-    # ── Stemming ──
-    stemmer = PorterStemmer()
-    stemmed_docs = [
-        [stemmer.stem(token) for token in doc]
-        for doc in filtered_docs
-    ]
+    # Lematización
+    df['lem_tokens'] = df['sw_tokens'].apply(lemmatize)
 
-    # ── Lematización ──
-    lemmatizer = WordNetLemmatizer()
-    lemmatized_docs = [
-        [lemmatizer.lemmatize(token) for token in doc]
-        for doc in filtered_docs
-    ]
+    # Unir tokens en un solo string para la columna final
+    df['prep_doc'] = df['lem_tokens'].str.join(' ')
 
-    # ── Vocabularios ──
-    all_stems = [token for doc in stemmed_docs for token in doc]
-    all_lemmas = [token for doc in lemmatized_docs for token in doc]
-    vocab_stems = set(all_stems)
-    vocab_lemmas = set(all_lemmas)
-
-    return {
-        "tokenized": tokenized_docs,
-        "normalized": normalized_docs,
-        "filtered": filtered_docs,
-        "stemmed": stemmed_docs,
-        "lemmatized": lemmatized_docs,
-        "vocab_stems": vocab_stems,
-        "vocab_lemmas": vocab_lemmas
-    }
+    # Devolver solo columnas requeridas
+    return df[['document', 'prep_doc']]
