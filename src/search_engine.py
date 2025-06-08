@@ -1,6 +1,8 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from src.perf_metrics import execute_time
 import pandas as pd
+
 
 def build_tf_matrix(data):
     """
@@ -51,6 +53,7 @@ def query_vectorizer(query, vectorizer):
     #Vectoriza una consulta utilizando el vectorizador proporcionado
     return vectorizer.transform([query])
 
+@execute_time
 def compute_cosine_similarity(matrix, query_vector, documents):
     """
     Función que calcula la similitud coseno entre una matriz y un vector de consulta
