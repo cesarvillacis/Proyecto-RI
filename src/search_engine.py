@@ -2,6 +2,8 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from src.perf_metrics import execute_time
 import pandas as pd
+from rank_bm25 import BM25Okapi
+from nltk.tokenize import regexp_tokenize
 
 
 def build_tf_matrix(data):
@@ -70,3 +72,43 @@ def compute_cosine_similarity(matrix, query_vector, documents):
     similar_documents = similar_documents.sort_values(by="Similarity", ascending=False)
 
     return similar_documents
+
+def build_bm25_model(documents):
+    """
+    Construye el modelo BM25 a partir de una lista de documentos previamente tokenizados.
+    
+    Argumentos:
+        documents (List[str]): Lista de documentos toeknizados, donde cada documento es una lista de tokens.
+        
+    Retorno:
+        BM25Okapi: El modelo BM25 entrenado con los documentos proporcionados.
+    """
+    # Se crea el modelo BM25 utilizando el corpus preprocesado
+    bm25 = BM25Okapi(documents)
+    
+    #retorna una intancia del modelo BM25 para luego poder extraer el score en funcion de una query
+    return bm25
+
+def compute_bm25_scores(bm25_model, query_tokens, documents):
+    """
+    Calcula los puntajes BM25 para una consulta y devuelve un DataFrame con los resultados ordenados.
+
+    Args:
+        bm25_model (BM25Okapi): Modelo BM25 ya entrenado.
+        query_tokens (List[str]): Consulta preprocesada y tokenizada.
+        documents (List[str]): Lista de documentos originales (texto plano).
+
+    Returns:
+        pd.DataFrame: Resultados con columnas 'Document' y 'Score', ordenados de mayor a menor relevancia.
+    """
+    scores = bm25_model.get_scores(query_tokens)
+
+    results_df = pd.DataFrame({
+        "Document": documents,
+        "Similarity": scores
+    }).sort_values(by="Similarity", ascending=False)
+
+    return results_df
+
+
+

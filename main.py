@@ -4,7 +4,9 @@ from src.dataset_loader import (
 from src.search_engine import (
     build_tf_idf_matrix,
     query_vectorizer,
-    compute_cosine_similarity
+    compute_cosine_similarity,
+    build_bm25_model,
+    compute_bm25_scores
 )
 from src.preprocessing import preprocess_documents
 from src.perf_metrics import precision_recall_at_k
@@ -16,15 +18,24 @@ USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 print("Cargando documentos...")
+<<<<<<< HEAD
 documents, document_ids = load_beir_documents(limit=20000) 
 queries, qrels = load_beir_queries_and_qrels(limit=10)
 
+=======
+documents = load_beir_documents(limit=1000) # reduce para pruebas más rápidas
+>>>>>>> 6ac25bcdc17baebbeffd3b92dbeb98465428c1f1
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 
 # ───── Crear índices ─────
 print("Construyendo índice TF-IDF...")
 tfidf_matrix, tfidf_vectorizer = build_tf_idf_matrix(preprocessed_docs)
+
+# ───── Construye modelo BM25 ─────
+print("Construyedo modelo BM25..")
+preprocessed_token_docs = preprocess_documents(documents, return_type='tokens')
+bm25_model = build_bm25_model(preprocessed_token_docs)
 
 
 # ───── Interfaz de consola ─────
@@ -36,6 +47,8 @@ while True:
     print("2. BM25")
     print("3. Evaluar automáticamente (TF-IDF)")
     print("4. Salir")
+
+
 
 
     choice = input("Opción: ").strip()
@@ -113,11 +126,10 @@ while True:
         
         # Procesamiento y búsqueda
         query_tokens = preprocess_documents([query])['prep_doc'].iloc[0]
+        query_tokens_bm25 = preprocess_documents([query], return_type='tokens')[0]
 
         if USE_BM25:
-            # results = bm25.query(query_tokens, top_k=TOP_K)
-            print("BM25 aún no está implementado.")
-            results = []
+            results = compute_bm25_scores(bm25_model, query_tokens_bm25, df["document"])
         if not USE_BM25:
             query_vec = query_vectorizer(query_tokens, tfidf_vectorizer)
             results, measured_time = compute_cosine_similarity(tfidf_matrix, query_vec, df['document'])

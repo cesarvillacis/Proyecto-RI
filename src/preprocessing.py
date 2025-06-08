@@ -17,12 +17,13 @@ def lemmatize_tokens(tokens):
     lemmatizer = WordNetLemmatizer()
     return [lemmatizer.lemmatize(token) for token in tokens]
 
-def preprocess_documents(documents):
+def preprocess_documents(documents, return_type='df'):
     """
     Preprocess a list of documents: lowercase, tokenize, remove stopwords, lemmatize.
 
     Args:
         documents (List[str]): List of raw document texts.
+        return_type (str): 'df' to return DataFrame, 'tokens' to return tokenized corpus.
 
     Returns:
         pd.DataFrame: DataFrame with original and preprocessed documents.
@@ -43,4 +44,7 @@ def preprocess_documents(documents):
     # Join tokens into a single string
     df['prep_doc'] = df['lemmas'].str.join(' ')
 
-    return df[['document', 'prep_doc']]
+    if return_type == 'tokens':
+        return df['lemmas'].tolist()
+    else:
+        return df[['document', 'prep_doc']]
