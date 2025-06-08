@@ -3,7 +3,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 from src.perf_metrics import execute_time
 import pandas as pd
 from rank_bm25 import BM25Okapi
-from nltk.tokenize import regexp_tokenize
 
 
 def build_tf_matrix(data):
@@ -89,6 +88,7 @@ def build_bm25_model(documents):
     #retorna una intancia del modelo BM25 para luego poder extraer el score en funcion de una query
     return bm25
 
+@execute_time
 def compute_bm25_scores(bm25_model, query_tokens, documents):
     """
     Calcula los puntajes BM25 para una consulta y devuelve un DataFrame con los resultados ordenados.

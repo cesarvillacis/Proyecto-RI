@@ -48,3 +48,10 @@ def preprocess_documents(documents, return_type='df'):
         return df['lemmas'].tolist()
     else:
         return df[['document', 'prep_doc']]
+
+
+def preprocess_both(text: str) -> tuple[str, list[str]]:
+    df = preprocess_documents([text])
+    clean = df['prep_doc'].iloc[0]
+    tokens = preprocess_documents([text], return_type='tokens')[0]
+    return clean, tokens
