@@ -3,7 +3,9 @@ from src.preprocessing import preprocess_documents
 from src.search_engine import (
     build_tf_idf_matrix,
     query_vectorizer,
-    compute_cosine_similarity
+    compute_cosine_similarity,
+    build_bm25_model,
+    compute_bm25_scores
 )
 import os
 
@@ -14,13 +16,18 @@ USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 print("Cargando documentos...")
-documents = load_beir_documents(limit=500)  # reduce para pruebas más rápidas
+documents = load_beir_documents(limit=1000) # reduce para pruebas más rápidas
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 
 # ───── Crear índices ─────
 print("Construyendo índice TF-IDF...")
 tfidf_matrix, tfidf_vectorizer = build_tf_idf_matrix(preprocessed_docs)
+
+# ───── Construye modelo BM25 ─────
+print("Construyedo modelo BM25..")
+preprocessed_token_docs = preprocess_documents(documents, return_type='tokens')
+bm25_model = build_bm25_model(preprocessed_token_docs)
 
 
 # ───── Interfaz de consola ─────
@@ -31,6 +38,8 @@ while True:
     print("1. Similitud Coseno con TF-IDF")
     print("2. BM25")
     print("3. Salir")
+
+
 
     choice = input("Opción: ").strip()
     
@@ -63,11 +72,10 @@ while True:
         
         # Procesamiento y búsqueda
         query_tokens = preprocess_documents([query])['prep_doc'].iloc[0]
+        query_tokens_bm25 = preprocess_documents([query], return_type='tokens')[0]
 
         if USE_BM25:
-            # results = bm25.query(query_tokens, top_k=TOP_K)
-            print("BM25 aún no está implementado.")
-            results = []
+            results = compute_bm25_scores(bm25_model, query_tokens_bm25, df["document"])
         if not USE_BM25:
             query_vec = query_vectorizer(query_tokens, tfidf_vectorizer)
             results = compute_cosine_similarity(tfidf_matrix, query_vec, df['document'])

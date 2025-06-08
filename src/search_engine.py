@@ -86,17 +86,26 @@ def build_bm25_model(documents):
     #retorna una intancia del modelo BM25 para luego poder extraer el score en funcion de una query
     return bm25
 
+def compute_bm25_scores(bm25_model, query_tokens, documents):
+    """
+    Calcula los puntajes BM25 para una consulta y devuelve un DataFrame con los resultados ordenados.
 
-def preprocess_query_for_bm25(query):
-    """
-    Preprocesa y tokeniza una consulta de texto para BM25.
-    
     Args:
-        query (str): Consulta en texto plano.
-        
-    Retorno:
-        List[str]: Lista de tokens procesados y listos para BM25.
+        bm25_model (BM25Okapi): Modelo BM25 ya entrenado.
+        query_tokens (List[str]): Consulta preprocesada y tokenizada.
+        documents (List[str]): Lista de documentos originales (texto plano).
+
+    Returns:
+        pd.DataFrame: Resultados con columnas 'Document' y 'Score', ordenados de mayor a menor relevancia.
     """
-    # Convertir a minúsculas y tokenizar con regex igual que en los documentos
-    tokens = regexp_tokenize(query.lower(), pattern=r'\w[a-z]+')
-    return tokens
+    scores = bm25_model.get_scores(query_tokens)
+
+    results_df = pd.DataFrame({
+        "Document": documents,
+        "Similarity": scores
+    }).sort_values(by="Similarity", ascending=False)
+
+    return results_df
+
+
+
