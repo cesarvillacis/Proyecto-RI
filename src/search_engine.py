@@ -1,6 +1,8 @@
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd
+from rank_bm25 import BM25Okapi
+from nltk.tokenize import regexp_tokenize
 
 def build_tf_matrix(data):
     """
@@ -67,3 +69,34 @@ def compute_cosine_similarity(matrix, query_vector, documents):
     similar_documents = similar_documents.sort_values(by="Similarity", ascending=False)
 
     return similar_documents
+
+def build_bm25_model(documents):
+    """
+    Construye el modelo BM25 a partir de una lista de documentos previamente tokenizados.
+    
+    Argumentos:
+        documents (List[str]): Lista de documentos toeknizados, donde cada documento es una lista de tokens.
+        
+    Retorno:
+        BM25Okapi: El modelo BM25 entrenado con los documentos proporcionados.
+    """
+    # Se crea el modelo BM25 utilizando el corpus preprocesado
+    bm25 = BM25Okapi(documents)
+    
+    #retorna una intancia del modelo BM25 para luego poder extraer el score en funcion de una query
+    return bm25
+
+
+def preprocess_query_for_bm25(query):
+    """
+    Preprocesa y tokeniza una consulta de texto para BM25.
+    
+    Args:
+        query (str): Consulta en texto plano.
+        
+    Retorno:
+        List[str]: Lista de tokens procesados y listos para BM25.
+    """
+    # Convertir a minúsculas y tokenizar con regex igual que en los documentos
+    tokens = regexp_tokenize(query.lower(), pattern=r'\w[a-z]+')
+    return tokens
