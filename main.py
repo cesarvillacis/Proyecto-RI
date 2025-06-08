@@ -18,13 +18,9 @@ USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 print("Cargando documentos...")
-<<<<<<< HEAD
 documents, document_ids = load_beir_documents(limit=20000) 
 queries, qrels = load_beir_queries_and_qrels(limit=10)
 
-=======
-documents = load_beir_documents(limit=1000) # reduce para pruebas más rápidas
->>>>>>> 6ac25bcdc17baebbeffd3b92dbeb98465428c1f1
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 
