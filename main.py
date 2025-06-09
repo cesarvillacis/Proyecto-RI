@@ -19,8 +19,8 @@ USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 print("Cargando documentos...")
-documents, document_ids = load_beir_documents(limit=20000) 
-queries, qrels = load_beir_queries_and_qrels(limit=10)
+documents, document_ids = load_beir_documents(limit=40000) 
+queries, qrels = load_beir_queries_and_qrels(limit=50)
 
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
@@ -146,7 +146,7 @@ while True:
         print(f"Su consulta se resolvió en {measured_time:.2f} segundos.\n")
         for i, row in results.head(TOP_K).iterrows():
             print(f"{i+1}. Score: {row['Similarity']:.4f}")
-            print(f"   {row['Document'][:200]}...\n")
+            print(f"   {row['Document'][:20000]}...\n")
 
         input("Presione Enter para hacer otra consulta...")
 
