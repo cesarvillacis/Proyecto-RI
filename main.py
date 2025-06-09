@@ -15,6 +15,8 @@ import os
 import time
 
 # ───── Configuración ─────
+
+
 # Número de documentos relevantes a recuperar por consulta
 TOP_K = 5
 # Algoritmo por defecto: False = TF-IDF, True = BM25
@@ -22,7 +24,7 @@ USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 documents, document_ids = load_beir_documents() 
-queries, qrels = load_beir_queries_and_qrels(limit=200)
+queries, qrels = load_beir_queries_and_qrels(limit=50)
 
 # Preprocesamiento textual de los documentos
 df = preprocess_documents(documents)
@@ -50,7 +52,8 @@ while True:
     print("2. BM25")
     print("3. Evaluar automáticamente (TF-IDF y BM25)")
     print("4. Mostrar índice invertido (TF-IDF)")
-    print("5. Salir")
+    print("5. Imprimir corpus") 
+    print("6. Salir")
 
     choice = input("Opción: ").strip()
     
@@ -144,8 +147,13 @@ while True:
             print(f"{term}: {doc_indices}")
         input("\nPresione Enter para continuar...")
         continue
-
     elif choice == '5':
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("=== Corpus original y preprocesado (primeros 10 documentos) ===")
+        print(df[['document', 'prep_doc']].head(10).to_string(index=False))
+        input("\nPresione Enter para continuar...")
+        continue
+    elif choice == '6':
         print("Saliendo...")
         break
     else:
