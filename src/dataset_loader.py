@@ -16,6 +16,9 @@ def load_beir_documents(limit=None):
     Returns:
         List[str]: A list of document texts.
     """
+    doc_texts = None
+    doc_ids = None
+
     # Check if the cached version exists
     if os.path.exists(CACHE_FILE):
         print("Loading dataset from cache...")
