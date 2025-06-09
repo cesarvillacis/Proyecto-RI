@@ -3,6 +3,7 @@ from src.dataset_loader import (
     load_beir_queries_and_qrels)
 from src.search_engine import (
     build_tf_idf_matrix,
+    build_inverted_index,
     query_vectorizer,
     compute_cosine_similarity,
     build_bm25_model,
@@ -20,17 +21,10 @@ TOP_K = 5
 USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
-<<<<<<< HEAD
-documents, document_ids = load_beir_documents(limit=10000) 
-queries, qrels = load_beir_queries_and_qrels(limit=50)
+documents, document_ids = load_beir_documents() 
+queries, qrels = load_beir_queries_and_qrels(limit=200)
 
 # Preprocesamiento textual de los documentos
-=======
-print("Cargando documentos...")
-documents, document_ids = load_beir_documents(limit=40000) 
-queries, qrels = load_beir_queries_and_qrels(limit=50)
-
->>>>>>> b7f51a4fd153185538780364030b8404736d61bf
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 preprocessed_token_docs = preprocess_documents(documents, return_type='tokens')
@@ -39,6 +33,8 @@ preprocessed_queries = {qid: preprocess_both(qtext) for qid, qtext in queries.it
 # ───── Crear índices ─────
 print("Construyendo índice TF-IDF...")
 tfidf_matrix, tfidf_vectorizer = build_tf_idf_matrix(preprocessed_docs)
+inverted_index = build_inverted_index(tfidf_matrix, tfidf_vectorizer)
+
 
 # ───── Construye modelo BM25 ─────
 print("Construyedo modelo BM25...")
@@ -53,7 +49,8 @@ while True:
     print("1. Similitud Coseno con TF-IDF")
     print("2. BM25")
     print("3. Evaluar automáticamente (TF-IDF y BM25)")
-    print("4. Salir")
+    print("4. Mostrar índice invertido (TF-IDF)")
+    print("5. Salir")
 
     choice = input("Opción: ").strip()
     
@@ -140,8 +137,15 @@ while True:
         print(f"Tiempo total de evaluación: {end - start:.2f} segundos")
         input("\nPresione Enter para continuar...")
         continue
-
     elif choice == '4':
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("=== Índice Invertido (TF-IDF) ===")
+        for term, doc_indices in list(inverted_index.items()):
+            print(f"{term}: {doc_indices}")
+        input("\nPresione Enter para continuar...")
+        continue
+
+    elif choice == '5':
         print("Saliendo...")
         break
     else:
@@ -176,7 +180,6 @@ while True:
         print(f"Su consulta se resolvió en {measured_time:.2f} segundos.\n")
         for i, row in results.head(TOP_K).iterrows():
             print(f"{i+1}. Score: {row['Similarity']:.4f}")
-            print(f"   {row['Document'][:20000]}...\n")
+            print(f"   {row['Document'][:200]}...\n")
 
         input("Presione Enter para hacer otra consulta...")
-
