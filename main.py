@@ -22,7 +22,7 @@ USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 documents, document_ids = load_beir_documents() 
-queries, qrels = load_beir_queries_and_qrels(limit=200)
+queries, qrels = load_beir_queries_and_qrels(limit=50)
 
 # Preprocesamiento textual de los documentos
 df = preprocess_documents(documents)
@@ -148,6 +148,7 @@ while True:
     elif choice == '5':
         print("Saliendo...")
         break
+
     else:
         print("Opción inválida.")
         input("Presione Enter para continuar...")
