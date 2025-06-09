@@ -20,10 +20,17 @@ TOP_K = 5
 USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
+<<<<<<< HEAD
 documents, document_ids = load_beir_documents(limit=10000) 
 queries, qrels = load_beir_queries_and_qrels(limit=50)
 
 # Preprocesamiento textual de los documentos
+=======
+print("Cargando documentos...")
+documents, document_ids = load_beir_documents(limit=20000) 
+queries, qrels = load_beir_queries_and_qrels(limit=10)
+
+>>>>>>> b7f51a4fd153185538780364030b8404736d61bf
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 preprocessed_token_docs = preprocess_documents(documents, return_type='tokens')
