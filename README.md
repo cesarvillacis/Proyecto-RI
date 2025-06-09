@@ -59,3 +59,9 @@ El proyecto incluye funciones para calcular:
   Precisión y recall en el top-k
   Precisión promedio (Average Precision)
 
+  ## Integrantes
+
+- Andrés Carrillo
+- Daniel Lorences
+- César Villacís
+
