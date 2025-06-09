@@ -3,6 +3,8 @@
 Este proyecto implementa un sistema de recuperación de documentos utilizando dos métodos de procesamiento de texto:**TF-IDF** y **BM25**. Se utiliza el dataset `beir/cqadupstack/gaming`, proporcionado por la librería `ir_datasets`.
 
 ## Estructura del Proyecto
+
+```
 src/
 ├── dataset_loader.py       # Carga y caching de documentos y queries del dataset
 ├── preprocessing.py        # Preprocesamiento: tokenización, stopwords, lematización
@@ -12,6 +14,8 @@ src/
 main.py                     # Script principal de ejecución y demostración
 README.md                   # Instrucciones y documentación
 requirements.txt            # Lista de dependencias
+```
+
 
 ## Instalación
 
