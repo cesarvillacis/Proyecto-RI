@@ -9,7 +9,7 @@ from src.search_engine import (
     compute_bm25_scores
 )
 from src.preprocessing import preprocess_documents, preprocess_both
-from src.perf_metrics import precision_recall_at_k
+from src.perf_metrics import precision_recall_at_k, average_precision
 import os
 import time
 
@@ -61,6 +61,9 @@ while True:
         total_precision_bm25 = 0.0
         total_recall_bm25 = 0.0
         num_queries = 0
+        total_map_tfidf = 0.0
+        total_map_bm25 = 0.0
+        num_queries = 0
 
         start = time.time()
         for query_id, query_text in queries.items():
@@ -71,7 +74,7 @@ while True:
             query_vec = query_vectorizer(query_clean, tfidf_vectorizer)
             results_tfidf, time_tfid = compute_cosine_similarity(tfidf_matrix, query_vec, df['document'])
             top_results_tfidf = results_tfidf.head(TOP_K)
-            retrieved_tfidf_ids = [document_ids[i] for i in top_results_tfidf["Index"]]
+            retrieved_tfidf_ids = [document_ids[i] for i in top_results_tfidf.index]
 
             # === Evaluación BM25 ===
             results_bm25, time_bm25 = compute_bm25_scores(bm25_model, query_tokens, df['document'])
@@ -84,10 +87,16 @@ while True:
             prec_tfidf, rec_tfidf = precision_recall_at_k(relevant_doc_ids, retrieved_tfidf_ids, TOP_K)
             prec_bm25, rec_bm25 = precision_recall_at_k(relevant_doc_ids, retrieved_bm25_ids, TOP_K)
 
+            ap_tfidf = average_precision(relevant_doc_ids, retrieved_tfidf_ids)
+            ap_bm25 = average_precision(relevant_doc_ids, retrieved_bm25_ids)
+
             total_precision_tfidf += prec_tfidf
             total_recall_tfidf += rec_tfidf
             total_precision_bm25 += prec_bm25
             total_recall_bm25 += rec_bm25
+            total_map_tfidf += ap_tfidf
+            total_map_bm25 += ap_bm25
+
             num_queries += 1
 
         # === Promedios finales ===
@@ -95,6 +104,8 @@ while True:
         mean_rec_tfidf = total_recall_tfidf / num_queries
         mean_prec_bm25 = total_precision_bm25 / num_queries
         mean_rec_bm25 = total_recall_bm25 / num_queries
+        mean_map_tfidf = total_map_tfidf / num_queries
+        mean_map_bm25 = total_map_bm25 / num_queries
 
         end = time.time()
 
@@ -103,9 +114,11 @@ while True:
         print(f"\n[TF-IDF]")
         print(f"Precisión promedio @ {TOP_K}: {mean_prec_tfidf:.2f}")
         print(f"Recall promedio @ {TOP_K}:    {mean_rec_tfidf:.2f}")
+        print(f"MAP:                         {mean_map_tfidf:.4f}")
         print(f"\n[BM25]")
         print(f"Precisión promedio @ {TOP_K}: {mean_prec_bm25:.2f}")
         print(f"Recall promedio @ {TOP_K}:    {mean_rec_bm25:.2f}")
+        print(f"MAP:                         {mean_map_bm25:.4f}")
         print("tiempo promedio TF-IDF: {:.2f} segundos".format(time_tfid))
         print("tiempo promedio BM25: {:.2f} segundos".format(time_bm25))
         print(f"Tiempo total de evaluación: {end - start:.2f} segundos")

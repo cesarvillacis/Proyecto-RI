@@ -28,3 +28,22 @@ def precision_recall_at_k(y_true, y_pred, k):
     recall = true_positives / len(y_true) if y_true else 0
 
     return precision, recall
+
+def average_precision(y_true, y_pred):
+    """
+    Función que calcula la precisión promedio de las predicciones.
+    Recibe como parámetros los documentos relevantes y los documentos recuperados.
+    Retorna la precisión promedio.
+    """
+    if not y_true:
+        return 0.0
+
+    precision_sum = 0.0
+    num_relevant = 0
+
+    for i, doc in enumerate(y_pred):
+        if doc in y_true:
+            num_relevant += 1
+            precision_sum += num_relevant / (i + 1)
+
+    return precision_sum / len(y_true) if len(y_true) > 0 else 0.0
