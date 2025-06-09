@@ -14,19 +14,21 @@ import os
 import time
 
 # ───── Configuración ─────
+# Número de documentos relevantes a recuperar por consulta
 TOP_K = 5
+# Algoritmo por defecto: False = TF-IDF, True = BM25
 USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
 documents, document_ids = load_beir_documents(limit=10000) 
 queries, qrels = load_beir_queries_and_qrels(limit=50)
 
-
-
+# Preprocesamiento textual de los documentos
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 preprocessed_token_docs = preprocess_documents(documents, return_type='tokens')
 preprocessed_queries = {qid: preprocess_both(qtext) for qid, qtext in queries.items()}
+
 # ───── Crear índices ─────
 print("Construyendo índice TF-IDF...")
 tfidf_matrix, tfidf_vectorizer = build_tf_idf_matrix(preprocessed_docs)
@@ -56,6 +58,7 @@ while True:
         # ───── Evaluación automática ─────
         print("Ejecutando evaluación automática...")
 
+        # Inicialización de variables acumuladoras para métricas
         total_precision_tfidf = 0.0
         total_recall_tfidf = 0.0
         total_precision_bm25 = 0.0
@@ -67,7 +70,7 @@ while True:
 
         start = time.time()
         for query_id, query_text in queries.items():
-
+            # Obtener la versión preprocesada de la consulta
             query_clean, query_tokens = preprocessed_queries[query_id]
 
             # === Evaluación TF-IDF ===
@@ -82,14 +85,18 @@ while True:
             retrieved_bm25_ids = [document_ids[i] for i in top_results_bm25.index]
 
             # === Cálculo de métricas ===
+            # Obtener los documentos relevantes para la consulta
             relevant_doc_ids = qrels[query_id]
 
+            # Calcular Precisión y Recall para cada modelo
             prec_tfidf, rec_tfidf = precision_recall_at_k(relevant_doc_ids, retrieved_tfidf_ids, TOP_K)
             prec_bm25, rec_bm25 = precision_recall_at_k(relevant_doc_ids, retrieved_bm25_ids, TOP_K)
 
+            # Calcular Promedio de Precisión (MAP)
             ap_tfidf = average_precision(relevant_doc_ids, retrieved_tfidf_ids)
             ap_bm25 = average_precision(relevant_doc_ids, retrieved_bm25_ids)
 
+            # Acumular métricas
             total_precision_tfidf += prec_tfidf
             total_recall_tfidf += rec_tfidf
             total_precision_bm25 += prec_bm25
@@ -100,6 +107,7 @@ while True:
             num_queries += 1
 
         # === Promedios finales ===
+        # Calcular métricas promedio sobre todas las consultas evaluadas
         mean_prec_tfidf = total_precision_tfidf / num_queries
         mean_rec_tfidf = total_recall_tfidf / num_queries
         mean_prec_bm25 = total_precision_bm25 / num_queries
@@ -109,6 +117,7 @@ while True:
 
         end = time.time()
 
+        # Mostrar resultados por consola
         print("\n--- Resultado de la Evaluación Automática ---")
         print(f"Consultas evaluadas: {num_queries}")
         print(f"\n[TF-IDF]")

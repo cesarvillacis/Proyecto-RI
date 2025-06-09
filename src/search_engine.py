@@ -8,9 +8,15 @@ from rank_bm25 import BM25Okapi
 
 def build_tf_matrix(data):
     """
-    Función que retorna el dataframe de la matriz TF
-    Recibe como parámetro una lista de documentos o un DataFrame con una columna de texto.
-    Retorna un DataFrame con la matriz TF y el vectorizador utilizado.
+    Construye la matriz de Frecuencia de Términos (TF) a partir de un conjunto de documentos.
+
+    Parámetros:
+        data (list[str] | pd.DataFrame): Lista de documentos o DataFrame con una columna de texto.
+
+    Retorna:
+        tuple:
+            - pd.DataFrame: Matriz TF con frecuencia de cada término por documento.
+            - CountVectorizer: Vectorizador utilizado para construir la matriz.
     """
     # Verificar si data es un DataFrame y convertirlo a lista si es necesario
     if isinstance(data, pd.DataFrame):
@@ -20,7 +26,7 @@ def build_tf_matrix(data):
     vectorizer = CountVectorizer()
     X_counts = vectorizer.fit_transform(data)
 
-    # Obtener términos y construir el DataFrame de vectorizer (matríz TF)
+    # Se obtienen los términos y se crea el DataFrame de salida
     terms = vectorizer.get_feature_names_out()
     tf_df = pd.DataFrame(X_counts.toarray(), columns=terms)
 
@@ -28,13 +34,21 @@ def build_tf_matrix(data):
 
 def build_tf_idf_matrix(data):
     """
-    Función que retorna el dataframe de la matriz TF-IDF
-    Recibe como parámetro una lista de documentos o un DataFrame con una columna de texto.
-    Retorna un DataFrame con la matriz TF-IDF y el vectorizador utilizado.
+    Construye la matriz TF-IDF (Term Frequency - Inverse Document Frequency).
+
+    Parámetros:
+        data (list[str] | pd.DataFrame): Lista de documentos o DataFrame con una columna de texto.
+
+    Retorna:
+        tuple:
+            - sparse matrix: Matriz TF-IDF en formato disperso.
+            - TfidfVectorizer: Vectorizador utilizado.
     """
+    # Si se recibe un DataFrame, se convierte en lista de texto
     if isinstance(data, pd.DataFrame):
         data = data.iloc[:, 0].tolist()
 
+    # Construir la matriz TF-IDF
     tfidf_vectorizer = TfidfVectorizer()
     X_tfidf = tfidf_vectorizer.fit_transform(data)
 
@@ -43,29 +57,39 @@ def build_tf_idf_matrix(data):
 
 def query_vectorizer(query, vectorizer):
     """
-    Función que vectoriza una consulta 
-    Recibe como parámetro una consulta y un vectorizador.
-    Retorna un vector de consulta transformado.
+    Vectoriza una consulta usando un vectorizador previamente entrenado.
+
+    Parámetros:
+        query (str): Consulta de entrada.
+        vectorizer (TfidfVectorizer | CountVectorizer): Vectorizador previamente entrenado.
+
+    Retorna:
+        sparse matrix: Vector transformado de la consulta.
     """
-    #Vectoriza una consulta utilizando el vectorizador proporcionado
     return vectorizer.transform([query])
 
 @execute_time
 def compute_cosine_similarity(matrix, query_vector, documents):
     """
-    Función que calcula la similitud coseno entre una matriz y un vector de consulta
-    Recibe como parámetros una matriz (dataframe), un vector de consulta y una lista de documentos.
-    Retorna un DataFrame con los documentos y sus similitudes ordenados de manera descendente.
+    Calcula la similitud coseno entre una consulta vectorizada y una matriz de documentos.
+
+    Parámetros:
+        matrix (sparse matrix): Matriz TF-IDF o TF.
+        query_vector (sparse matrix): Vector de la consulta.
+        documents (list[str]): Lista de documentos originales.
+
+    Retorna:
+        pd.DataFrame: Resultados ordenados por similitud, incluyendo los documentos y sus puntajes.
     """
     similarities = cosine_similarity(matrix, query_vector).flatten()
 
-    # Creamos un DataFrame con índices para poder ordenar sin perder la referencia
+    # Crear DataFrame con índices para mantener referencia al documento original
     results_df = pd.DataFrame({
         "Index": range(len(similarities)),
         "Similarity": similarities
     })
 
-    # Ordenamos por similitud
+    # Ordener los resultados por similitud
     results_df = results_df.sort_values(by="Similarity", ascending=False)
 
     # Agregamos la columna 'Document' accediendo a su índice en la lista original
@@ -75,13 +99,13 @@ def compute_cosine_similarity(matrix, query_vector, documents):
 
 def build_bm25_model(documents):
     """
-    Construye el modelo BM25 a partir de una lista de documentos previamente tokenizados.
-    
-    Argumentos:
-        documents (List[str]): Lista de documentos toeknizados, donde cada documento es una lista de tokens.
-        
-    Retorno:
-        BM25Okapi: El modelo BM25 entrenado con los documentos proporcionados.
+    Construye un modelo BM25 a partir de una lista de documentos tokenizados.
+
+    Parámetros:
+        documents (list[list[str]]): Lista de documentos tokenizados (cada documento es una lista de tokens).
+
+    Retorna:
+        BM25Okapi: Modelo BM25 entrenado.
     """
     # Se crea el modelo BM25 utilizando el corpus preprocesado
     bm25 = BM25Okapi(documents)
@@ -92,15 +116,15 @@ def build_bm25_model(documents):
 @execute_time
 def compute_bm25_scores(bm25_model, query_tokens, documents):
     """
-    Calcula los puntajes BM25 para una consulta y devuelve un DataFrame con los resultados ordenados.
+    Calcula los puntajes BM25 para una consulta y devuelve los resultados ordenados.
 
-    Args:
-        bm25_model (BM25Okapi): Modelo BM25 ya entrenado.
-        query_tokens (List[str]): Consulta preprocesada y tokenizada.
-        documents (List[str]): Lista de documentos originales (texto plano).
+    Parámetros:
+        bm25_model (BM25Okapi): Modelo BM25 previamente entrenado.
+        query_tokens (list[str]): Consulta tokenizada.
+        documents (list[str]): Lista de documentos originales.
 
-    Returns:
-        pd.DataFrame: Resultados con columnas 'Document' y 'Score', ordenados de mayor a menor relevancia.
+    Retorna:
+        pd.DataFrame: Resultados con columnas 'Document' y 'Similarity', ordenados de mayor a menor.
     """
     scores = bm25_model.get_scores(query_tokens)
 
