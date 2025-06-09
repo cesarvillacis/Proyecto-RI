@@ -11,6 +11,7 @@ from src.search_engine import (
 from src.preprocessing import preprocess_documents, preprocess_both
 from src.perf_metrics import precision_recall_at_k
 import os
+import time
 
 # ───── Configuración ─────
 TOP_K = 5
@@ -25,7 +26,7 @@ queries, qrels = load_beir_queries_and_qrels(limit=50)
 df = preprocess_documents(documents)
 preprocessed_docs = df['prep_doc'].tolist()
 preprocessed_token_docs = preprocess_documents(documents, return_type='tokens')
-
+preprocessed_queries = {qid: preprocess_both(qtext) for qid, qtext in queries.items()}
 # ───── Crear índices ─────
 print("Construyendo índice TF-IDF...")
 tfidf_matrix, tfidf_vectorizer = build_tf_idf_matrix(preprocessed_docs)
@@ -51,7 +52,7 @@ while True:
         USE_BM25 = False
     elif choice == '2':
         USE_BM25 = True
-    elif choice == '3':
+    elif choice == '3': 
         # ───── Evaluación automática ─────
         print("Ejecutando evaluación automática...")
 
@@ -61,18 +62,19 @@ while True:
         total_recall_bm25 = 0.0
         num_queries = 0
 
+        start = time.time()
         for query_id, query_text in queries.items():
 
-            query_clean, query_tokens = preprocess_both(query_text)
+            query_clean, query_tokens = preprocessed_queries[query_id]
 
             # === Evaluación TF-IDF ===
             query_vec = query_vectorizer(query_clean, tfidf_vectorizer)
-            results_tfidf, _ = compute_cosine_similarity(tfidf_matrix, query_vec, df['document'])
+            results_tfidf, time_tfid = compute_cosine_similarity(tfidf_matrix, query_vec, df['document'])
             top_results_tfidf = results_tfidf.head(TOP_K)
-            retrieved_tfidf_ids = [document_ids[i] for i in top_results_tfidf.index]
+            retrieved_tfidf_ids = [document_ids[i] for i in top_results_tfidf["Index"]]
 
             # === Evaluación BM25 ===
-            results_bm25, _ = compute_bm25_scores(bm25_model, query_tokens, df['document'])
+            results_bm25, time_bm25 = compute_bm25_scores(bm25_model, query_tokens, df['document'])
             top_results_bm25 = results_bm25.head(TOP_K)
             retrieved_bm25_ids = [document_ids[i] for i in top_results_bm25.index]
 
@@ -94,14 +96,19 @@ while True:
         mean_prec_bm25 = total_precision_bm25 / num_queries
         mean_rec_bm25 = total_recall_bm25 / num_queries
 
+        end = time.time()
+
         print("\n--- Resultado de la Evaluación Automática ---")
         print(f"Consultas evaluadas: {num_queries}")
         print(f"\n[TF-IDF]")
-        print(f"Precisión promedio @ {TOP_K}: {mean_prec_tfidf:.4f}")
-        print(f"Recall promedio @ {TOP_K}:    {mean_rec_tfidf:.4f}")
+        print(f"Precisión promedio @ {TOP_K}: {mean_prec_tfidf:.2f}")
+        print(f"Recall promedio @ {TOP_K}:    {mean_rec_tfidf:.2f}")
         print(f"\n[BM25]")
-        print(f"Precisión promedio @ {TOP_K}: {mean_prec_bm25:.4f}")
-        print(f"Recall promedio @ {TOP_K}:    {mean_rec_bm25:.4f}")
+        print(f"Precisión promedio @ {TOP_K}: {mean_prec_bm25:.2f}")
+        print(f"Recall promedio @ {TOP_K}:    {mean_rec_bm25:.2f}")
+        print("tiempo promedio TF-IDF: {:.2f} segundos".format(time_tfid))
+        print("tiempo promedio BM25: {:.2f} segundos".format(time_bm25))
+        print(f"Tiempo total de evaluación: {end - start:.2f} segundos")
         input("\nPresione Enter para continuar...")
         continue
 
