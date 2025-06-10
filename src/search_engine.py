@@ -55,6 +55,26 @@ def build_tf_idf_matrix(data):
     # No convertir a DataFrame denso
     return X_tfidf, tfidf_vectorizer
 
+def build_inverted_index(tfidf_matrix, tfidf_vectorizer):
+    """
+    Construye un índice invertido a partir de la matriz TF-IDF y el vectorizador.
+
+    Parámetros:
+        tfidf_matrix (sparse matrix): Matriz TF-IDF.
+        tfidf_vectorizer (TfidfVectorizer): Vectorizador entrenado.
+
+    Retorna:
+        dict: Índice invertido {término: [índices de documentos]}
+    """
+    terms = tfidf_vectorizer.get_feature_names_out()
+    inverted_index = {}
+    matrix = tfidf_matrix.tocsc()  # Para acceso eficiente por columna
+
+    for term_idx, term in enumerate(terms):
+        doc_indices = matrix[:, term_idx].nonzero()[0]
+        inverted_index[term] = doc_indices.tolist()
+    return inverted_index
+
 def query_vectorizer(query, vectorizer):
     """
     Vectoriza una consulta usando un vectorizador previamente entrenado.
@@ -134,6 +154,3 @@ def compute_bm25_scores(bm25_model, query_tokens, documents):
     }).sort_values(by="Similarity", ascending=False)
 
     return results_df
-
-
-

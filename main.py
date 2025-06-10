@@ -3,6 +3,7 @@ from src.dataset_loader import (
     load_beir_queries_and_qrels)
 from src.search_engine import (
     build_tf_idf_matrix,
+    build_inverted_index,
     query_vectorizer,
     compute_cosine_similarity,
     build_bm25_model,
@@ -14,13 +15,15 @@ import os
 import time
 
 # ───── Configuración ─────
+
+
 # Número de documentos relevantes a recuperar por consulta
 TOP_K = 5
 # Algoritmo por defecto: False = TF-IDF, True = BM25
 USE_BM25 = False
 
 # ───── Carga y preprocesamiento ─────
-documents, document_ids = load_beir_documents(limit=1000) 
+documents, document_ids = load_beir_documents() 
 queries, qrels = load_beir_queries_and_qrels(limit=50)
 
 # Preprocesamiento textual de los documentos
@@ -32,6 +35,8 @@ preprocessed_queries = {qid: preprocess_both(qtext) for qid, qtext in queries.it
 # ───── Crear índices ─────
 print("Construyendo índice TF-IDF...")
 tfidf_matrix, tfidf_vectorizer = build_tf_idf_matrix(preprocessed_docs)
+inverted_index = build_inverted_index(tfidf_matrix, tfidf_vectorizer)
+
 
 # ───── Construye modelo BM25 ─────
 print("Construyedo modelo BM25...")
@@ -46,7 +51,9 @@ while True:
     print("1. Similitud Coseno con TF-IDF")
     print("2. BM25")
     print("3. Evaluar automáticamente (TF-IDF y BM25)")
-    print("4. Salir")
+    print("4. Mostrar índice invertido (TF-IDF)")
+    print("5. Imprimir corpus") 
+    print("6. Salir")
 
     choice = input("Opción: ").strip()
     
@@ -133,10 +140,23 @@ while True:
         print(f"Tiempo total de evaluación: {end - start:.2f} segundos")
         input("\nPresione Enter para continuar...")
         continue
-
     elif choice == '4':
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("=== Índice Invertido (TF-IDF) ===")
+        for term, doc_indices in list(inverted_index.items()):
+            print(f"{term}: {doc_indices}")
+        input("\nPresione Enter para continuar...")
+        continue
+    elif choice == '5':
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("=== Corpus original y preprocesado (primeros 10 documentos) ===")
+        print(df[['document', 'prep_doc']].head(10).to_string(index=False))
+        input("\nPresione Enter para continuar...")
+        continue
+    elif choice == '6':
         print("Saliendo...")
         break
+
     else:
         print("Opción inválida.")
         input("Presione Enter para continuar...")
@@ -172,4 +192,3 @@ while True:
             print(f"   {row['Document'][:200]}...\n")
 
         input("Presione Enter para hacer otra consulta...")
-
